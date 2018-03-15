@@ -92,13 +92,16 @@ class YCTitleView: UIView {
         self.titles = titles
         self.style = style
         super.init(frame: frame)
-        
-        //设置UI
-        setupUI()
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        //设置UI
+        setupUI()
     }
 }
 
@@ -256,6 +259,8 @@ extension YCTitleView {
         // 如果是重复点击同一个Title,那么直接返回
         if currentLabel.tag == currentIndex { return }
         
+        //print("currentLabel.tag:\(currentLabel.tag)---currentIndex:\(currentIndex)")
+        
         // 获取之前的Label
         let oldLabel = titleLabels[currentIndex]
         
@@ -265,6 +270,14 @@ extension YCTitleView {
         
         // 保存最新Label的下标值
         currentIndex = currentLabel.tag
+        
+        for label in titleLabels{
+            if(label !== currentLabel){
+                // 3.2.变化targetLabel
+                label.textColor = style.normalColor
+                label.transform = CGAffineTransform.identity
+            }
+        }
         
         // 通知代理
         delegate?.titleView(self, selectedIndex: currentIndex)
@@ -315,23 +328,25 @@ extension YCTitleView {
         // 1.取出sourceLabel/targetLabel
         let sourceLabel = titleLabels[sourceIndex]
         let targetLabel = titleLabels[targetIndex]
-                
+        
         // 3.颜色的渐变(复杂)
         // 3.1.取出变化的范围
         let colorDelta = (selectedColorRGB.0 - normalColorRGB.0, selectedColorRGB.1 - normalColorRGB.1, selectedColorRGB.2 - normalColorRGB.2)
         
         // 4.记录最新的index
         currentIndex = targetIndex
+        
         let moveTotalX = targetLabel.frame.origin.x - sourceLabel.frame.origin.x
         let moveTotalW = targetLabel.frame.width - sourceLabel.frame.width
         
         if(sourceIndex != targetIndex){
+            
             // 3.2.变化sourceLabel
             sourceLabel.textColor = UIColor(r: selectedColorRGB.0 - colorDelta.0 * progress, g: selectedColorRGB.1 - colorDelta.1 * progress, b: selectedColorRGB.2 - colorDelta.2 * progress)
             
             // 3.2.变化targetLabel
             targetLabel.textColor = UIColor(r: normalColorRGB.0 + colorDelta.0 * progress, g: normalColorRGB.1 + colorDelta.1 * progress, b: normalColorRGB.2 + colorDelta.2 * progress)
-
+            
             // 6.放大的比例
             if style.isNeedScale {
                 let scaleDelta = (style.scaleRange - 1.0) * progress
@@ -339,7 +354,7 @@ extension YCTitleView {
                 targetLabel.transform = CGAffineTransform(scaleX: 1.0 + scaleDelta, y: 1.0 + scaleDelta)
             }
         }
-    
+        
         // 5.计算滚动的范围差值
         if style.isShowBottomLine {
             bottomLine.frame.size.width = sourceLabel.frame.width + moveTotalW * progress
